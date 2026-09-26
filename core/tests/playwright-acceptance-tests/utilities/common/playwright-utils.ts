@@ -1250,8 +1250,13 @@ export class BaseUser {
    * @param value The value of the mat-option to select.
    */
   async selectMatOption(value: string): Promise<void> {
-    await this.clickOnElementWithSelectorAndText('mat-option', value);
-    await this.expectElementToBeVisible('mat-option', false);
+    const option = this.page
+      .locator('mat-option')
+      .filter({hasText: value})
+      .first();
+    await option.waitFor({state: 'visible'});
+    await option.click();
+    await expect(option).toBeHidden();
   }
 
   /**

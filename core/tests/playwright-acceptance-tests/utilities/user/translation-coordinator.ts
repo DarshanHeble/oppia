@@ -16,7 +16,7 @@
  * @fileoverview Translation coordinator role utility file.
  */
 
-import {ElementHandle, Page} from '@playwright/test';
+import {expect, Page} from '@playwright/test';
 import {BaseUser} from '../common/playwright-utils';
 
 const languageSelectorModalSelector = '.e2e-test-language-selector-modal-body';
@@ -62,27 +62,15 @@ export class TranslationCoordinator extends BaseUser {
     visible: boolean = true
   ): Promise<void> {
     await this.expectElementToBeVisible(languageSelectorModalSelector);
-    await this.page.waitForFunction(
-      ({
-        selector,
-        language,
-        visible,
-      }: {
-        selector: string;
-        language: string;
-        visible: boolean;
-      }) => {
-        const elements = document.querySelectorAll(selector);
-        for (const element of Array.from(elements)) {
-          const elementText = element.textContent?.trim();
-          if (elementText === language) {
-            return visible === true;
-          }
-        }
-        return visible === false;
-      },
-      {selector: selectedLanguageSelector, language, visible}
-    );
+    const languageLocator = this.page
+      .locator(languageSelectorModalSelector)
+      .locator(selectedLanguageSelector)
+      .filter({hasText: language});
+    if (visible) {
+      await expect(languageLocator.first()).toBeVisible();
+    } else {
+      await expect(languageLocator).toHaveCount(0);
+    }
   }
 
   /**
@@ -99,40 +87,26 @@ export class TranslationCoordinator extends BaseUser {
    * @param {string} language - The language to select.
    */
   async selectLanguageInAdminPage(language: string): Promise<void> {
-    await this.expectElementToBeVisible(languageSelectorInAdminPageSelector);
-    await this.clickOnElementWithSelector(languageSelectorInAdminPageSelector);
+    const dropdown = this.page
+      .locator(languageSelectorInAdminPageSelector)
+      .locator('visible=true')
+      .first();
+    await dropdown.waitFor({state: 'visible'});
+    await dropdown.click();
 
-    await this.expectElementToBeVisible(languageOptionInAdminPageSelector);
-    const languageOptions = await this.page.$$(
-      languageOptionInAdminPageSelector
-    );
-    let languageOption: ElementHandle<Element> | null = null;
-    for (const option of languageOptions) {
-      const optionText = await option.evaluate(el => el.textContent?.trim());
-      if (optionText === language) {
-        languageOption = option;
-        break;
-      }
-    }
+    const option = this.page
+      .locator(languageOptionInAdminPageSelector)
+      .filter({hasText: language})
+      .locator('visible=true')
+      .first();
+    await option.waitFor({state: 'visible'});
+    await option.click();
 
-    if (!languageOption) {
-      const languageOptionTexts = await this.page.$$eval(
-        languageOptionInAdminPageSelector,
-        elements => elements.map(element => element.textContent)
-      );
-
-      throw new Error(
-        `Language ${language} not found.\n` +
-          `Found languages: ${languageOptionTexts.join(', ')}`
-      );
-    }
-
-    await languageOption.click();
-
-    await this.expectTextContentToContain(
-      languageSelectorSelectedInAdminPageSelector,
-      language
-    );
+    const selected = this.page
+      .locator(languageSelectorSelectedInAdminPageSelector)
+      .locator('visible=true')
+      .first();
+    await expect(selected).toContainText(language);
   }
 
   /**
@@ -144,28 +118,13 @@ export class TranslationCoordinator extends BaseUser {
   ): Promise<void> {
     await this.expectElementToBeVisible(selectedLanguageContainerSelector);
 
-    const languageContainers = await this.page.$$(
-      selectedLanguageContainerSelector
-    );
-    let languageContainer: ElementHandle<Element> | null = null;
-    for (const container of languageContainers) {
-      const containerText = await container.evaluate(el =>
-        el.textContent?.trim()
-      );
-      if (containerText?.includes(language)) {
-        languageContainer = container;
-        break;
-      }
-    }
+    const container = this.page
+      .locator(selectedLanguageContainerSelector)
+      .filter({hasText: language})
+      .first();
+    await expect(container).toBeVisible();
 
-    if (!languageContainer) {
-      throw new Error(`Language ${language} not found.`);
-    }
-
-    const removeButton = await languageContainer.waitForSelector('button');
-    if (!removeButton) {
-      throw new Error('Remove button not found.');
-    }
+    const removeButton = container.locator('button').first();
     await removeButton.click();
 
     await this.expectLanguageModalToContainLanguage(language, false);

@@ -72,8 +72,12 @@ export class ContributorAdmin extends BaseUser {
     if (this.isViewportAtMobileWidth()) {
       // Remove last 's' from the tab name.
       const modifiedName = tabName.replace(/s$/, '');
-      await this.expectElementToBeVisible(tabSelectionDropdownMobileSelector);
-      await this.clickOnElementWithSelector(tabSelectionDropdownMobileSelector);
+      const dropdown = this.page
+        .locator(tabSelectionDropdownMobileSelector)
+        .locator('visible=true')
+        .first();
+      await dropdown.waitFor({state: 'visible'});
+      await dropdown.click();
       await this.selectMatOption(modifiedName);
     } else {
       const tabNameInLowerCase = tabName.toLocaleLowerCase().replace(' ', '-');
@@ -93,8 +97,12 @@ export class ContributorAdmin extends BaseUser {
    * Clicks on the add contributor button.
    */
   async clickOnAddReviewerOrSubmitterButton(): Promise<void> {
-    await this.expectElementToBeVisible(addContributorButtonSelector);
-    await this.clickOnElementWithSelector(addContributorButtonSelector);
+    const button = this.page
+      .locator(addContributorButtonSelector)
+      .locator('visible=true')
+      .first();
+    await button.waitFor({state: 'visible'});
+    await button.click();
 
     await this.expectElementToBeVisible(commonModalTitleSelector);
     await this.expectTextContentToContain(
@@ -146,12 +154,14 @@ export class ContributorAdmin extends BaseUser {
       ? mobileLastDatePickerInputSelector
       : lastDatePickerInputSelector;
 
-    await this.clearAllTextFrom(dateInputSelector);
-    await this.typeInInputField(dateInputSelector, yesterdayDate);
-    await this.page.keyboard.press('Enter');
-    await expect(this.page.locator(dateInputSelector)).toHaveValue(
-      yesterdayDate
-    );
+    const inputLocator = this.page
+      .locator(dateInputSelector)
+      .locator('visible=true')
+      .first();
+    await inputLocator.waitFor({state: 'visible'});
+    await inputLocator.fill(yesterdayDate);
+    await inputLocator.press('Enter');
+    await expect(inputLocator).toHaveValue(yesterdayDate);
   }
 
   /**
