@@ -212,6 +212,7 @@ test.describe('Translation Coordinator', function () {
     );
     await translationCoordinator.closeLanguageSelectorModal();
     await translationCoordinator.page.reload();
+    await translationCoordinator.waitForPageToFullyLoad();
     await translationCoordinator.switchToTabInContributorAdminPage(
       'Translation Reviewers'
     );
@@ -249,6 +250,7 @@ test.describe('Translation Coordinator', function () {
     );
     await translationCoordinator.closeLanguageSelectorModal();
     await translationCoordinator.page.reload();
+    await translationCoordinator.waitForPageToFullyLoad();
     await translationCoordinator.switchToTabInContributorAdminPage(
       'Translation Reviewers'
     );
