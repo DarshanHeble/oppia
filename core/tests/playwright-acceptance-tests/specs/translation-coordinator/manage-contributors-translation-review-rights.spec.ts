@@ -132,7 +132,6 @@ test.describe('Translation Coordinator', function () {
     );
 
     // Navigate to contributor dashboard and submit one translation.
-    await translationSubmitter.navigateToLearnerDashboard();
     await translationSubmitter.navigateToContributorDashboardUsingProfileDropdown();
     await translationSubmitter.switchToTabInContributionDashboard(
       'Translate Text'
