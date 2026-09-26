@@ -669,6 +669,16 @@ export class BaseUser {
   }
 
   /**
+   * Scrolls to the top of the page.
+   */
+  async scrollToTopOfPage(): Promise<void> {
+    await this.page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
+    await this.waitForPageToFullyLoad();
+  }
+
+  /**
    * This function compares the current page screenshot with a reference image.
    * @param {string} imageName - The name for the image
    * @param {Page|undefined} newPage - The page to take screenshot from. If not
