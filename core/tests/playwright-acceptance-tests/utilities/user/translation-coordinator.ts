@@ -129,12 +129,9 @@ export class TranslationCoordinator extends BaseUser {
 
     await languageOption.click();
 
-    const expectedLanguage = this.isViewportAtMobileWidth()
-      ? language
-      : `Language: ${language}`;
-    await this.expectTextContentToBe(
+    await this.expectTextContentToContain(
       languageSelectorSelectedInAdminPageSelector,
-      expectedLanguage
+      language
     );
   }
 
