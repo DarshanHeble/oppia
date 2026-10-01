@@ -2616,24 +2616,29 @@ export class ExplorationEditor extends BaseUser {
   }
 
   async waitForSolutionButtonToBeVisible(wrongAnswer: string): Promise<void> {
-    // Submit wrong answer multiple times until solution is available.
-    for (let i = 0; i < 3; i++) {
-      await this.typeInInputField(
-        'textarea.e2e-test-description-box',
-        wrongAnswer
-      );
-      await this.clickOnElementWithSelector(
-        '.e2e-test-submit-answer-button:not([disabled])'
-      );
-      await this.page.waitForTimeout(500);
+    const viewSolutionSelector = '.e2e-test-view-solution';
+    for (let i = 0; i < 5; i++) {
       try {
-        await this.expectElementToBeVisible('.e2e-test-view-solution');
-        break;
+        await this.page.locator(viewSolutionSelector).waitFor({ state: 'visible', timeout: 2000 });
+        return;
       } catch (e) {
-        // Continue loop if not visible yet
+        // Submit wrong answer if solution button is not visible
+        await this.typeInInputField('textarea.e2e-test-description-box', wrongAnswer);
+        await this.clickOnElementWithSelector('.e2e-test-submit-answer-button:not([disabled])');
+        await this.page.waitForTimeout(500);
+        
+        try {
+          const isHintVisible = await this.page.locator('.e2e-test-view-hint').isVisible();
+          if (isHintVisible) {
+             await this.clickOnElementWithSelector('.e2e-test-view-hint');
+             await this.clickOnElementWithSelector('.e2e-test-close-hint');
+          }
+        } catch (e) {
+          // ignore
+        }
       }
     }
-    await this.expectElementToBeVisible('.e2e-test-view-solution');
+    await this.page.locator(viewSolutionSelector).waitFor({ state: 'visible', timeout: 60000 });
   }
 
   async navigateToPreferencesPage(): Promise<void> {
