@@ -1850,7 +1850,7 @@ export class ExplorationEditor extends BaseUser {
 
     await this.expectElementToBeVisible(creatorDashboardMenuLink);
     await this.clickOnElementWithSelector(creatorDashboardMenuLink);
-    await this.expectElementToBeVisible('.e2e-test-creator-dashboard');
+    await this.expectElementToBeVisible('.e2e-test-creator-dashboard-container');
   }
 
   /**
@@ -2561,7 +2561,7 @@ export class ExplorationEditor extends BaseUser {
    * Expect to be in the creator dashboard page.
    */
   async expectToBeInCreatorDashboard(): Promise<void> {
-    await this.page.waitForSelector('.e2e-test-creator-dashboard', {
+    await this.page.waitForSelector('.e2e-test-creator-dashboard-container', {
       state: 'visible',
     });
 
