@@ -2615,22 +2615,6 @@ export class ExplorationEditor extends BaseUser {
     }
   }
 
-  async closeHintModal(): Promise<void> {
-    await this.clickOnElementWithSelector('.e2e-test-learner-got-it-button');
-  }
-
-  async viewHint(): Promise<void> {
-    await this.clickOnElementWithSelector('.e2e-test-view-hint');
-  }
-
-  async viewSolution(): Promise<void> {
-    await this.clickOnElementWithSelector('.e2e-test-view-solution');
-  }
-
-  async closeSolutionModal(): Promise<void> {
-    await this.clickOnElementWithSelector('.e2e-test-learner-got-it-button');
-  }
-
   async waitForSolutionButtonToBeVisible(wrongAnswer: string): Promise<void> {
     // Submit wrong answer multiple times until solution is available.
     for (let i = 0; i < 3; i++) {
@@ -2662,11 +2646,6 @@ export class ExplorationEditor extends BaseUser {
     await this.clickOnElementWithSelectorAndText('.mat-option', language);
   }
 
-  async saveChangesInPreferencesPage(): Promise<void> {
-    await this.page.waitForTimeout(1000);
-    // In Oppia, preferences are auto-saved or have a save button? Let's assume auto-saved or we can ignore if not there.
-  }
-
   async expectResponseFeedbackToBe(expectedFeedback: string): Promise<void> {
     await this.expectElementToBeVisible(
       '.e2e-test-conversation-feedback-latest'
@@ -2678,39 +2657,6 @@ export class ExplorationEditor extends BaseUser {
     if (!text.includes(expectedFeedback)) {
       throw new Error(`Expected feedback ${expectedFeedback} but got ${text}`);
     }
-  }
-
-  async expectLessonInfoTextToBe(expectedText: string): Promise<void> {
-    await this.expectElementToBeVisible('.e2e-test-lesson-info-content');
-    const text = await this.page.$eval(
-      '.e2e-test-lesson-info-content',
-      el => el.textContent || ''
-    );
-    if (!text.includes(expectedText)) {
-      throw new Error(
-        `Expected lesson info to contain ${expectedText} but got ${text}`
-      );
-    }
-  }
-
-  async expectNextCardButtonTextToBe(expectedText: string): Promise<void> {
-    const text = await this.page.$eval(
-      '.e2e-test-next-card-button',
-      el => el.textContent || ''
-    );
-    if (!text.includes(expectedText)) {
-      throw new Error(`Expected button text ${expectedText} but got ${text}`);
-    }
-  }
-
-  async openLessonInfoModal(): Promise<void> {
-    await this.clickOnElementWithSelector('.e2e-test-lesson-info-icon');
-  }
-
-  async closeLessonInfoModal(): Promise<void> {
-    await this.clickOnElementWithSelector(
-      '.e2e-test-close-lesson-info-modal-button'
-    );
   }
 }
 
