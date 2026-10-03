@@ -410,7 +410,7 @@ export class ExplorationEditor extends BaseUser {
     await this.expectElementToBeVisible('css=.tab-pane.active.show');
 
     const interactionElement = await this.expectElementToBeVisible(
-      `xpath=//*[contains(normalize-space(text()), "${tileText}")]`,
+      `xpath=//div[contains(@class, "customize-interaction-modal")]//div[contains(@class, "oppia-interaction-tile-name") and normalize-space(text())="${tileText}"]`,
       true,
       this.page,
       90000
