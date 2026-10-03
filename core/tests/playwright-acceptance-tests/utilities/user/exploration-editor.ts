@@ -1068,10 +1068,33 @@ export class ExplorationEditor extends BaseUser {
         )
       )
     );
-    const cardIndex = cardNames.indexOf(cardName);
+
+    const truncatedCardName = this.truncateCardName(cardName);
+    let cardIndex = cardNames.indexOf(cardName);
 
     if (cardIndex === -1) {
-      throw new Error(`Card name ${cardName} not found in the graph.`);
+      cardIndex = cardNames.indexOf(truncatedCardName);
+    }
+
+    if (cardIndex === -1) {
+      cardIndex = cardNames.findIndex(
+        name =>
+          name === cardName ||
+          name === truncatedCardName ||
+          name.startsWith(truncatedCardName.replace(/\.+$/, '')) ||
+          cardName.startsWith(name.replace(/\.+$/, ''))
+      );
+    }
+
+    if (cardIndex === -1) {
+      if (retry) {
+        showMessage(`Unable to find card ${cardName} in graph. Retrying...`);
+        await this.page.waitForTimeout(1000);
+        return await this.navigateToCard(cardName, false);
+      }
+      throw new Error(
+        `Card name ${cardName} not found in the graph. Found cards: ${cardNames.join(', ')}`
+      );
     }
 
     const nodeGroup: ElementHandle<Element> | null = elements[cardIndex];
@@ -1115,6 +1138,12 @@ export class ExplorationEditor extends BaseUser {
           `Unable to navigate to the card ${cardName}.\n` + err.message;
         throw err;
       }
+    }
+
+    if (this.isViewportAtMobileWidth()) {
+      await this.page.waitForSelector(explorationStateGraphModalSelector, {
+        state: 'hidden',
+      });
     }
   }
 
