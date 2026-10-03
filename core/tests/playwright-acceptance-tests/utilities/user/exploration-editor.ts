@@ -16,7 +16,7 @@
  * @fileoverview Utility functions for the Exploration Editor page.
  */
 
-import {Page, ElementHandle, expect} from '@playwright/test';
+import {Page, ElementHandle, expect, errors} from '@playwright/test';
 import {BaseUser} from '../common/playwright-utils';
 import testConstants from '../common/test-constants';
 import {showMessage} from '../common/show-message';
@@ -1781,26 +1781,37 @@ export class ExplorationEditor extends BaseUser {
     await this.page.waitForSelector(stateConversationContent, {
       state: 'visible',
     });
-    const element = await this.page.$(stateConversationContent);
     try {
       await this.page.waitForFunction(
-        (element: HTMLElement, value: string, matchCase: boolean) => {
+        ({
+          selector,
+          value,
+          matchCase,
+        }: {
+          selector: string;
+          value: string;
+          matchCase: boolean;
+        }) => {
+          const el = document.querySelector(selector) as HTMLElement | null;
+          if (!el) {
+            return false;
+          }
           const normalize = (s: string) => s.trim().replace(/\n+/g, '\n');
           return (
-            (normalize(element.innerText) === normalize(value)) === matchCase
+            (normalize(el.innerText) === normalize(value)) === matchCase
           );
         },
-        {},
-        element,
-        // @ts-ignore
-        expectedCardContent,
-        matchCase
+        {
+          selector: stateConversationContent,
+          value: expectedCardContent,
+          matchCase,
+        }
       );
     } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
       throw new Error(
         `Card content ${matchCase ? 'did not' : 'did'} match expected content.\n` +
-          // @ts-ignore
-          `Original Error: ${error.stack}`
+          `Original Error: ${err.stack}`
       );
     }
   }
@@ -1814,7 +1825,6 @@ export class ExplorationEditor extends BaseUser {
       await this.page.waitForSelector(nextCardButton, {timeout: 7000});
       await this.clickOnElementWithSelector(nextCardButton);
     } catch (error) {
-      // @ts-ignore
       if (error instanceof errors.TimeoutError) {
         await this.clickOnElementWithSelector(nextCardArrowButton);
       } else {
@@ -1897,6 +1907,17 @@ export class ExplorationEditor extends BaseUser {
     expect(preview).toBeNull();
   }
 
+  private truncateCardName(cardName: string): string {
+    const maxNodeLabelLength = 15;
+    if (!cardName || cardName.length <= maxNodeLabelLength) {
+      return cardName;
+    }
+    const suffix = '...';
+    return (
+      cardName.substring(0, maxNodeLabelLength - suffix.length) + suffix
+    );
+  }
+
   /**
    * Verifies that the exploration graph contains the specified card.
    * @param {string} cardName - The name of the card to check.
@@ -1908,9 +1929,17 @@ export class ExplorationEditor extends BaseUser {
 
     await this.page.waitForSelector('.e2e-test-state-node-group');
 
-    const truncatedCardName = String(cardName);
+    const truncatedCardName = this.truncateCardName(cardName);
     await this.page.waitForFunction(
-      (selector: string, fullName: string, truncatedName: string) => {
+      ({
+        selector,
+        fullName,
+        truncatedName,
+      }: {
+        selector: string;
+        fullName: string;
+        truncatedName: string;
+      }) => {
         const elements = document.querySelectorAll(selector);
         const cardValues = Array.from(elements).map(element =>
           element.textContent?.trim()
@@ -1919,11 +1948,12 @@ export class ExplorationEditor extends BaseUser {
           cardValues.includes(fullName) || cardValues.includes(truncatedName)
         );
       },
-      {timeout: 60000},
-      stateNodeSelector,
-      // @ts-ignore
-      cardName,
-      truncatedCardName
+      {
+        selector: stateNodeSelector,
+        fullName: cardName,
+        truncatedName: truncatedCardName,
+      },
+      {timeout: 60000}
     );
 
     if (this.isViewportAtMobileWidth()) {
@@ -1967,8 +1997,7 @@ export class ExplorationEditor extends BaseUser {
     if (!found) {
       throw new Error(`Option ${option} not found.`);
     }
-    // @ts-ignore
-    await this.page.waitForNetworkIdle({idleTime: 1000});
+    await this.waitForNetworkIdle();
     await this.clickOnElementWithSelector('.e2e-test-submit-answer-button');
   }
 
@@ -2065,11 +2094,7 @@ export class ExplorationEditor extends BaseUser {
       await inputElements[2].click();
 
       await this.page.waitForFunction(
-        (ele: any) => {
-          return ele.checked;
-        },
-        {},
-        // @ts-ignore
+        (ele: HTMLInputElement) => ele.checked,
         inputElements[2]
       );
     }
@@ -2258,14 +2283,11 @@ export class ExplorationEditor extends BaseUser {
     await this.expectElementToBeVisible(saveChangesButtonSelector);
 
     await this.page.waitForFunction(
-      (selector: string, disabled: boolean) => {
+      ({selector, disabled}: {selector: string; disabled: boolean}) => {
         const element = document.querySelector(selector);
         return (element as HTMLButtonElement)?.disabled === disabled;
       },
-      {},
-      saveChangesButton,
-      // @ts-ignore
-      disabled
+      {selector: saveChangesButtonSelector, disabled}
     );
   }
 
@@ -2349,13 +2371,13 @@ export class ExplorationEditor extends BaseUser {
   ): Promise<void> {
     await this.clickOnElementWithSelector(rule);
 
-    const responseModal = await await this.page.$(
-      '.e2e-test-rule-editor-modal'
+    const responseModal = await this.page.waitForSelector(
+      '.e2e-test-rule-editor-modal',
+      {state: 'visible'}
     );
 
     const multipleChoiceDropdown = await this.getElementInParent(
       multipleChoiceResponseDropdown,
-      // @ts-ignore
       responseModal
     );
 
@@ -2541,19 +2563,19 @@ export class ExplorationEditor extends BaseUser {
     await this.expectElementToBeVisible(interactionPreviewSelector);
     await this.clickOnElementWithSelector(interactionPreviewSelector);
     await this.page.waitForFunction(
-      (selector: string, h1: string, h2: string) => {
+      ({selector, h1, h2}: {selector: string; h1: string; h2: string}) => {
         const element = document.querySelector(selector);
         return (
-          element &&
-          (element.textContent?.includes(h1) ||
-            element.textContent?.includes(h2))
+          Boolean(element) &&
+          (element?.textContent?.includes(h1) ||
+            element?.textContent?.includes(h2))
         );
       },
-      {},
-      commonModalTitleSelector,
-      // @ts-ignore
-      'Customize Interaction',
-      'Add Response'
+      {
+        selector: commonModalTitleSelector,
+        h1: 'Customize Interaction',
+        h2: 'Add Response',
+      }
     );
   }
 
@@ -2596,7 +2618,7 @@ export class ExplorationEditor extends BaseUser {
       el =>
         el.getAttribute('placeholder') ||
         el.getAttribute('aria-placeholder') ||
-        (el as any).placeholder ||
+        (el as HTMLInputElement).placeholder ||
         ''
     );
     expect(actualPlaceholder.trim()).toBe(placeholder);
