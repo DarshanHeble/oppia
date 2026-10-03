@@ -104,6 +104,7 @@ const multipleChoiceResponseDropdown =
   'mat-select.e2e-test-main-html-select-selector';
 const multipleChoiceResponseOption = 'mat-option.e2e-test-html-select-selector';
 const responseModalBodySelector = '.e2e-test-response-modal-body';
+const ruleEditorInResponseModalSeclector = 'oppia-rule-editor';
 const floatFormInput = '.e2e-test-float-form-input';
 const addResponseOptionButton = 'button.e2e-test-add-list-entry';
 const textInputInteractionOption =
@@ -2401,6 +2402,76 @@ export class ExplorationEditor extends BaseUser {
   }
 
   /**
+   * Returns the rule editor modal element.
+   */
+  async getRuleEditorModal(): Promise<ElementHandle<Element>> {
+    await this.page.waitForSelector(responseModalBodySelector, {
+      state: 'visible',
+    });
+
+    const responseBox = await this.page.$(responseModalBodySelector);
+    if (!responseBox) {
+      throw new Error('Response modal not found');
+    }
+
+    const ruleEditor = await responseBox.$(ruleEditorInResponseModalSeclector);
+    if (!ruleEditor) {
+      throw new Error('Rule editor not found');
+    }
+
+    return ruleEditor;
+  }
+
+  /**
+   * Updates the rule in the response modal.
+   * @param {string} rule - The rule to select.
+   */
+  async updateRuleInResponseModalTo(rule: string): Promise<void> {
+    await this.page.waitForSelector(responseModalBodySelector, {
+      state: 'visible',
+    });
+
+    const responseBox = await this.page.$(responseModalBodySelector);
+    if (!responseBox) {
+      throw new Error('Response modal is not visible.');
+    }
+
+    const ruleSelector = await responseBox.$(
+      'oppia-rule-type-selector mat-select'
+    );
+    if (!ruleSelector) {
+      throw new Error('Rule type selector not found in response modal.');
+    }
+
+    const currentRuleText = (await ruleSelector.innerText()) || '';
+    if (currentRuleText.includes(rule)) {
+      return;
+    }
+
+    await ruleSelector.click();
+    await this.page.waitForSelector('mat-option', {state: 'visible'});
+    const ruleOptions = await this.page.$$('mat-option');
+    for (const option of ruleOptions) {
+      const text = (await option.textContent()) || '';
+      if (text.includes(rule)) {
+        await option.click();
+        break;
+      }
+    }
+
+    await this.page.waitForFunction(
+      ({selector, ruleText}: {selector: string; ruleText: string}) => {
+        const el = document.querySelector(selector);
+        return el ? (el.textContent || '').includes(ruleText) : false;
+      },
+      {
+        selector: `${responseModalBodySelector} oppia-rule-type-selector mat-select`,
+        ruleText: rule,
+      }
+    );
+  }
+
+  /**
    * Updates the answer in the response modal for a multiple choice rule.
    * @param rule The rule to update.
    * @param answer The answer to update.
@@ -2409,12 +2480,9 @@ export class ExplorationEditor extends BaseUser {
     rule: 'is equal to',
     answer: string
   ): Promise<void> {
-    await this.clickOnElementWithSelector(rule);
+    await this.updateRuleInResponseModalTo(rule);
 
-    const responseModal = await this.page.waitForSelector(
-      '.e2e-test-rule-editor-modal',
-      {state: 'visible'}
-    );
+    const responseModal = await this.getRuleEditorModal();
 
     const multipleChoiceDropdown = await this.getElementInParent(
       multipleChoiceResponseDropdown,
