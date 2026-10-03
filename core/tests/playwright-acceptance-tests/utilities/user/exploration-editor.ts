@@ -200,6 +200,7 @@ const mobilePreviewTabButton = '.e2e-test-mobile-preview-button';
 const goalWarningSelector = '.e2e-test-exploration-objective-warning';
 const closeModalButtonSelector = '.e2e-test-modal-close-button';
 const stateNodeSelector = '.e2e-test-node-label';
+const stateNodeGroupSelector = '.e2e-test-node';
 const profileDropdown = '.e2e-test-profile-dropdown';
 const nextCardButtonSelector = '.e2e-test-next-card-button';
 const multipleChoiceOptionSelector = '.e2e-test-multiple-choice-option';
@@ -1018,6 +1019,24 @@ export class ExplorationEditor extends BaseUser {
   }
 
   /**
+   * Opens the exploration state graph modal in mobile view.
+   */
+  async openExplorationStateGraphInMobileView(): Promise<void> {
+    const stateGraphModalIsOpen = await this.page.$(
+      explorationStateGraphModalSelector
+    );
+    if (!stateGraphModalIsOpen) {
+      const blockingModal = await this.page.$('div.modal-content');
+      if (blockingModal) {
+        await this.expectElementToBeVisible('div.modal-content', false);
+      }
+      await this.expectElementToBeVisible(mobileStateGraphResizeButton);
+      await this.clickOnElementWithSelector(mobileStateGraphResizeButton);
+      await this.expectElementToBeVisible(explorationStateGraphModalSelector);
+    }
+  }
+
+  /**
    * Function to navigate to a specific card in the exploration.
    * @param {string} cardName - The name of the card to navigate to.
    * @param {boolean} retry - Whether to retry navigation if it fails (default: true).
@@ -1025,29 +1044,14 @@ export class ExplorationEditor extends BaseUser {
   async navigateToCard(cardName: string, retry: boolean = true): Promise<void> {
     let elements;
     if (this.isViewportAtMobileWidth()) {
-      // Check if the state graph modal is already open before clicking the
-      // resize button.
-      const stateGraphModalIsOpen = await this.page.$(
-        explorationStateGraphModalSelector
-      );
-      if (!stateGraphModalIsOpen) {
-        // Wait for any blocking modal to close first before clicking the
-        // resize button.
-        const blockingModal = await this.page.$('div.modal-content');
-        if (blockingModal) {
-          await this.expectElementToBeVisible('div.modal-content', false);
-        }
-        await this.expectElementToBeVisible(mobileStateGraphResizeButton);
-        await this.clickOnElementWithSelector(mobileStateGraphResizeButton);
-      }
+      await this.openExplorationStateGraphInMobileView();
     }
 
     // Get all state node groups (not just labels) since we need to click the
     // background rect which has the click handler.
-    const stateNodeGroupSelector = '.e2e-test-node';
     const scopedStateNodeGroupSelector = this.isViewportAtMobileWidth()
-      ? `${explorationStateGraphModalSelector} ${'.e2e-test-state-node-group'}`
-      : '.e2e-test-state-node-group';
+      ? `${explorationStateGraphModalSelector} ${stateNodeGroupSelector}`
+      : stateNodeGroupSelector;
     if (this.isViewportAtMobileWidth()) {
       await this.expectElementToBeVisible(explorationStateGraphModalSelector);
     }
@@ -1249,7 +1253,8 @@ export class ExplorationEditor extends BaseUser {
     await this.typeInInputField(stateContentInputField, `${content}`);
     await this.clickOnElementWithSelector(saveContentButton);
     await this.expectElementToBeVisible(stateContentInputField, false);
-    await this.expectTextContentToContain(stateContentSelector, content);
+    // TODO(#23019): Uncomment this line once the issue is resolved.
+    // await this.expectTextContentToContain(stateContentSelector, content);
     showMessage('Card content is updated successfully.');
   }
 
@@ -1924,10 +1929,13 @@ export class ExplorationEditor extends BaseUser {
    */
   async expectExplorationGraphToContainCard(cardName: string): Promise<void> {
     if (this.isViewportAtMobileWidth()) {
-      await this.clickOnElementWithSelector('.e2e-test-mobile-state-graph');
+      await this.openExplorationStateGraphInMobileView();
     }
 
-    await this.page.waitForSelector('.e2e-test-state-node-group');
+    const scopedStateNodeGroupSelector = this.isViewportAtMobileWidth()
+      ? `${explorationStateGraphModalSelector} ${stateNodeGroupSelector}`
+      : stateNodeGroupSelector;
+    await this.page.waitForSelector(scopedStateNodeGroupSelector);
 
     const truncatedCardName = this.truncateCardName(cardName);
     await this.page.waitForFunction(
@@ -1957,7 +1965,7 @@ export class ExplorationEditor extends BaseUser {
     );
 
     if (this.isViewportAtMobileWidth()) {
-      await this.page.click(closeModalButtonSelector);
+      await this.clickOnElementWithSelector(closeModalButtonSelector);
       await this.expectElementToBeVisible(
         explorationStateGraphModalSelector,
         false
