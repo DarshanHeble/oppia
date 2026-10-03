@@ -2194,14 +2194,6 @@ export class ExplorationEditor extends BaseUser {
   }
 
   /**
-   * Compares the text content of next button in lesson player.
-   * @param {string} buttonText - Expected button text.
-   */
-  async expectNextCardButtonTextToBe(buttonText: string): Promise<void> {
-    await this.expectTextContentToBe(nextCardButton, buttonText);
-  }
-
-  /**
    * Removes the current interaction.
    */
   async removeInteraction(): Promise<void> {
