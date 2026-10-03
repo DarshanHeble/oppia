@@ -201,6 +201,8 @@ const goalWarningSelector = '.e2e-test-exploration-objective-warning';
 const closeModalButtonSelector = '.e2e-test-modal-close-button';
 const stateNodeSelector = '.e2e-test-node-label';
 const stateNodeGroupSelector = '.e2e-test-node';
+const contentBoxSelector =
+  '.e2e-test-state-editor .e2e-test-state-content-display';
 const profileDropdown = '.e2e-test-profile-dropdown';
 const nextCardButtonSelector = '.e2e-test-next-card-button';
 const multipleChoiceOptionSelector = '.e2e-test-multiple-choice-option';
@@ -2102,7 +2104,7 @@ export class ExplorationEditor extends BaseUser {
       await inputElements[2].click();
 
       await this.page.waitForFunction(
-        (ele: HTMLInputElement) => ele.checked,
+        (ele: Element) => (ele as HTMLInputElement).checked,
         inputElements[2]
       );
     }
@@ -2179,16 +2181,24 @@ export class ExplorationEditor extends BaseUser {
    * @param {string} expectedCardContent - The expected card content.
    */
   async expectCardContentToBe(expectedCardContent: string): Promise<void> {
-    await this.page.waitForSelector('.e2e-test-state-edit-content', {
+    await this.page.waitForSelector(contentBoxSelector, {
       state: 'visible',
     });
 
     const cardContent = await this.page.$eval(
-      '.e2e-test-state-edit-content',
+      contentBoxSelector,
       el => el.textContent?.trim()
     );
 
     expect(cardContent).toBe(expectedCardContent);
+  }
+
+  /**
+   * Compares the text content of next button in lesson player.
+   * @param {string} buttonText - Expected button text.
+   */
+  async expectNextCardButtonTextToBe(buttonText: string): Promise<void> {
+    await this.expectTextContentToBe(nextCardButton, buttonText);
   }
 
   /**
