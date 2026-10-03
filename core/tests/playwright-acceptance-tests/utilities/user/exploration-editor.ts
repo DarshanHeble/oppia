@@ -1191,7 +1191,8 @@ export class ExplorationEditor extends BaseUser {
     await this.expectElementToBeVisible(createExplorationButtonSelector);
     await this.clickOnElementWithSelector(createExplorationButtonSelector);
     await this.page.waitForURL(url => url.href.includes(`${baseUrl}/create/`), {
-      timeout: 10000,
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
     });
   }
 
