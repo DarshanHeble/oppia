@@ -2708,7 +2708,8 @@ export class ExplorationEditor extends BaseUser {
   }
 
   async expectHintsToContain(expectedHint: string): Promise<void> {
-    const hintSelector = '.e2e-test-hint-text';
+    const hintSelector =
+      '.e2e-test-current-hint-box .e2e-test-response-summary';
     await this.page.waitForSelector(hintSelector, {state: 'visible'});
     const hints = await this.page.$$eval(hintSelector, elements =>
       elements.map(el => el.textContent?.trim())
@@ -2747,28 +2748,47 @@ export class ExplorationEditor extends BaseUser {
 
   async waitForSolutionButtonToBeVisible(wrongAnswer: string): Promise<void> {
     const viewSolutionSelector = '.e2e-test-view-solution';
+    const hintSelector = '.e2e-test-view-hint';
+    const gotItButtonSelector = '.e2e-test-learner-got-it-button';
+
     for (let i = 0; i < 5; i++) {
-      try {
-        await this.page.locator(viewSolutionSelector).waitFor({ state: 'visible', timeout: 2000 });
+      const isSolutionVisible = await this.page
+        .locator(viewSolutionSelector)
+        .isVisible();
+      if (isSolutionVisible) {
         return;
-      } catch (e) {
-        // Submit wrong answer if solution button is not visible
-        await this.typeInInputField('textarea.e2e-test-description-box', wrongAnswer);
-        await this.clickOnElementWithSelector('.e2e-test-submit-answer-button:not([disabled])');
-        await this.page.waitForTimeout(500);
-        
-        try {
-          const isHintVisible = await this.page.locator('.e2e-test-view-hint').isVisible();
-          if (isHintVisible) {
-             await this.clickOnElementWithSelector('.e2e-test-view-hint');
-             await this.clickOnElementWithSelector('.e2e-test-close-hint');
-          }
-        } catch (e) {
-          // ignore
+      }
+
+      await this.typeInInputField(
+        'textarea.e2e-test-description-box',
+        wrongAnswer
+      );
+      await this.clickOnElementWithSelector(
+        '.e2e-test-submit-answer-button:not([disabled])'
+      );
+      await this.page.waitForTimeout(500);
+
+      try {
+        const isHintVisible = await this.page
+          .locator(hintSelector)
+          .isVisible();
+        if (isHintVisible) {
+          await this.clickOnElementWithSelector(hintSelector);
+          await this.page.waitForSelector(gotItButtonSelector, {
+            state: 'visible',
+          });
+          await this.clickOnElementWithSelector(gotItButtonSelector);
+          await this.page.waitForSelector(gotItButtonSelector, {
+            state: 'hidden',
+          });
         }
+      } catch (e) {
+        // Ignore if hint modal interactions fail.
       }
     }
-    await this.page.locator(viewSolutionSelector).waitFor({ state: 'visible', timeout: 60000 });
+    await this.page
+      .locator(viewSolutionSelector)
+      .waitFor({state: 'visible', timeout: 60000});
   }
 
   async navigateToPreferencesPage(): Promise<void> {
