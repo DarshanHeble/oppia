@@ -2734,16 +2734,11 @@ export class ExplorationEditor extends BaseUser {
   }
 
   async expectHintInHintModalToContain(expectedHint: string): Promise<void> {
-    await this.expectElementToBeVisible('.e2e-test-hint-content');
-    const text = await this.page.$eval(
-      '.e2e-test-hint-content',
-      el => el.textContent || ''
+    await this.expectElementToBeVisible(commonModalTitleSelector);
+    await this.expectTextContentToContain(
+      commonModalBodySelector,
+      expectedHint
     );
-    if (!text.includes(expectedHint)) {
-      throw new Error(
-        `Expected hint to contain ${expectedHint} but got ${text}`
-      );
-    }
   }
 
   async waitForSolutionButtonToBeVisible(wrongAnswer: string): Promise<void> {
@@ -2797,7 +2792,7 @@ export class ExplorationEditor extends BaseUser {
   }
 
   async updatePreferredSiteLanguage(language: string): Promise<void> {
-    await this.clickOnElementWithSelector('.e2e-test-site-language-dropdown');
+    await this.clickOnElementWithSelector('.e2e-test-site-language-selector');
     await this.clickOnElementWithSelectorAndText('.mat-option', language);
   }
 
