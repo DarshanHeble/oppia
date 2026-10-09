@@ -2255,7 +2255,7 @@ export class ExplorationEditor extends BaseUser {
    * Verifies that the interaction preview card is visible.
    */
   async expectInteractionPreviewCardToBeVisible(): Promise<void> {
-    const visible = await this.isElementVisible(interactionPreviewCardSelector);
+    const visible = await this.isElementVisible(interactionPreviewSelector);
 
     expect(visible).toBe(true);
   }
